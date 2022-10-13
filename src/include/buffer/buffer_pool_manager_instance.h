@@ -15,6 +15,7 @@
 #include <list>
 #include <mutex>  // NOLINT
 #include <unordered_map>
+#include <utility>
 
 #include "buffer/buffer_pool_manager.h"
 #include "buffer/lru_k_replacer.h"
@@ -54,8 +55,6 @@ class BufferPoolManagerInstance : public BufferPoolManager {
 
  protected:
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Create a new page in the buffer pool. Set page_id to the new page's id, or nullptr if all frames
    * are currently in use and not evictable (in another word, pinned).
    *
@@ -73,8 +72,6 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   auto NewPgImp(page_id_t *page_id) -> Page * override;
 
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Fetch the requested page from the buffer pool. Return nullptr if page_id needs to be fetched from the disk
    * but all frames are currently in use and not evictable (in another word, pinned).
    *
@@ -91,8 +88,6 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   auto FetchPgImp(page_id_t page_id) -> Page * override;
 
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Unpin the target page from the buffer pool. If page_id is not in the buffer pool or its pin count is already
    * 0, return false.
    *
@@ -106,8 +101,6 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   auto UnpinPgImp(page_id_t page_id, bool is_dirty) -> bool override;
 
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Flush the target page to disk.
    *
    * Use the DiskManager::WritePage() method to flush a page to disk.
@@ -119,15 +112,11 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   auto FlushPgImp(page_id_t page_id) -> bool override;
 
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Flush all the pages in the buffer pool to disk.
    */
   void FlushAllPgsImp() override;
 
   /**
-   * TODO(P1): Add implementation
-   *
    * @brief Delete a page from the buffer pool. If page_id is not in the buffer pool, do nothing and return true. If the
    * page is pinned and cannot be deleted, return false immediately.
    *
@@ -159,7 +148,10 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   LRUKReplacer *replacer_;
   /** List of free frames that don't have any pages on them. */
   std::list<frame_id_t> free_list_;
-  /** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */
+
+  /**
+   * This latch protects the entire manager
+   */
   std::mutex latch_;
 
   /**
@@ -176,6 +168,17 @@ class BufferPoolManagerInstance : public BufferPoolManager {
     // This is a no-nop right now without a more complex data structure to track deallocated pages
   }
 
-  // TODO(student): You may add additional private members and helper functions
+  /**
+   * @brief Get a free page
+   * @return pointer to the free page, nullptr if the can not find one
+   *
+   * The returned page is not evictable
+   */
+  auto GetFreePageInternal() -> std::pair<Page *, frame_id_t>;
+
+  /**
+   * @brief Flush a page
+   */
+  void FlushPageInternal(Page *page);
 };
 }  // namespace bustub
